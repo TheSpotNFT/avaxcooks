@@ -30,7 +30,7 @@ export const Nav = ({
           <div className="flex flex-col items-center w-full xl:flex-row xl:justify-between">
             <div className="flex items-center justify-center mx-auto w-full xl:justify-start xl:w-auto pl-24">
               <img src={logo} alt="Logo" className="relative w-24 hidden md:block z-30" />
-              <span className="text-xs flex md:text-3xl font-bold text-white z-30 pl-8">InterPlanetary Recipe System</span>
+              <span className="text-xs flex md:text-3xl font-bold text-white z-30 pl-8 md:block sm:hidden">InterPlanetary Recipe System</span>
             </div>
             <ul
               className={`pr-12 overflow-y-visible xl:flex xl:items-center absolute xl:static bg-neutral-700 left-0 sm:w-full md:w-1/3 xl:w-auto xl:pl-0 pl-0 transition-all duration-300 ease-in ${open ? "md:top-24 sm:top-[75px] opacity-100 shadow-md" : "top-[-250px] md:top-[-250px] z-10"

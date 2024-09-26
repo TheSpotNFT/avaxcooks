@@ -676,7 +676,7 @@ const Gallery = ({ account }) => {
       <div className="mx-auto w-64 h-64 pt-6 pointer-events-none block md:hidden pb-8">
         <img src={logothin} alt="Logo" />
       </div>
-      <h1 className="text-6xl pb-8 pt-12 font-bold mb-4 text-neutral-800">Browse {displayTokens.length} Recipes</h1>
+      <h1 className="text-4xl md:text-6xl pb-8 pt-12 font-bold mb-4 text-neutral-800">Browse {displayTokens.length} Recipes</h1>
       <div className="py-0 md:pb-0 md:py-0 lg:px-32 xl:px-48 mx-auto 2xl:px-32">
       <div className="py-0 md:pb-0 md:py-0 lg:px-32 xl:px-48 mx-auto 2xl:px-32">
         {/* Search Inputs */}
@@ -720,7 +720,7 @@ const Gallery = ({ account }) => {
         </div>
       </div>
       <div className="mx-auto">
-        <div className="flex flex-col md:flex-row items-center justify-center w-full space-y-2 md:space-y-0 md:mt-2 pb-20 xl:px-48 lg:px-32 2xl:px-32">
+        <div className="flex flex-col md:flex-row items-center justify-center w-full space-y-2 md:space-y-0 md:mt-2 pb-4 md:pb-20 xl:px-48 lg:px-32 2xl:px-32">
           <div className="flex-1 w-full md:pr-4">
             <input
               type="text"
