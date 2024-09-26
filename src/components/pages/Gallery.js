@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import NFTCard from "./NFTCard";
+import { useLocation } from 'react-router-dom';
 import UserProfileCard from "../../components/userProfileCard"; // Create this new component
 import { ethers, Contract } from "ethers";
 import { AVAXCOOKSLIKESANDTIPS_ABI, AVAXCOOKSLIKESANDTIPS_ADDRESS } from '../Contracts/AvaxCooksLikeAndTip';
 import userProfiles from '../../userProfiles'; // Import user profiles JSON
 import logo from "../../assets/iprs_spot.png";
 import logothin from "../../assets/iprs_thin.png";
-import { useLocation } from 'react-router-dom';
 import { signInAnonymously } from "../../firebase3";
 import Moralis from 'moralis';
+import { sanitizeName } from "../../utils";
+
 import image1 from "../../assets/nft_images/1.jpg";
 import image2 from "../../assets/nft_images/2.jpg";
 import image3 from "../../assets/nft_images/3.jpg";
@@ -375,7 +377,11 @@ const Gallery = ({ account }) => {
   const apiKey = process.env.GLACIER_API_KEY;
   const moralisApiKey = process.env.MORALIS_API;
   const [moralisInitialized, setMoralisInitialized] = useState(false);
-
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const recipeNameFromURL = queryParams.get('recipeName');
+  const cardRefs = useRef({});
+  const [isRecipeLoading, setIsRecipeLoading] = useState(false);
 
   useEffect(() => {
     signInAnonymously();
@@ -390,7 +396,14 @@ const Gallery = ({ account }) => {
     return shuffledArray;
   };
 
-  const location = useLocation();
+
+  useEffect(() => {
+    if (recipeNameFromURL) {
+      const recipeNameWithSpaces = recipeNameFromURL.replace(/_/g, ' '); // Replace underscores with spaces
+      setRecipeNameSearch(recipeNameWithSpaces);
+    }
+  }, [recipeNameFromURL]);
+ 
 
   const handleTipsFetch = (tokenId, tips) => {
     setTipsData(prev => ({ ...prev, [tokenId]: tips }));
@@ -484,139 +497,122 @@ const Gallery = ({ account }) => {
     }, []);
     
 
-  useEffect(() => {
-    filterAndSortTokens(allTokens);
-  }, [contributorSearch]); // Trigger filtering when contributorSearch changes
+    useEffect(() => {
+      filterAndSortTokens(allTokens);
+    }, [allTokens, recipeNameSearch, searchText1, searchText2, searchText3, mealType, community, contributorSearch, sortOption]);
+    
   
 
   const filterAndSortTokens = (tokens) => {
     console.log("Tokens before filtering:", tokens.length); // Debugging line
-     // Parse metadata and filter tokens
-  let filteredTokens = tokens.map(token => {
-    let parsedMetadata = {};
-
-    if (token.metadata) {
-      if (typeof token.metadata === 'string') {
-        try {
-          parsedMetadata = JSON.parse(token.metadata);
-        } catch (error) {
-          console.error("Error parsing token.metadata:", error);
-          parsedMetadata = {};
+  
+    // Parse metadata and filter tokens
+    let filteredTokens = tokens.map(token => {
+      let parsedMetadata = {};
+  
+      // Check and parse metadata
+      if (token.metadata) {
+        if (typeof token.metadata === 'string') {
+          try {
+            parsedMetadata = JSON.parse(token.metadata);
+          } catch (error) {
+            console.error("Error parsing token.metadata:", error);
+            parsedMetadata = {};
+          }
+        } else {
+          parsedMetadata = token.metadata;
         }
-      } else {
-        parsedMetadata = token.metadata;
       }
-    }
-
-    return {
-      ...token,
-      parsedMetadata,
+  
+      return {
+        ...token,
+        parsedMetadata,
+        tokenId: Number(token.token_id) // Convert tokenId to number
     };
-  }).filter(token => {
-    if (!token.parsedMetadata || !token.parsedMetadata.attributes) {
-      console.log("Token excluded due to missing metadata/attributes:", token);
-      return false;
-    }
-    return true;
-  });
-
-  console.log("Tokens after parsing and initial filtering:", filteredTokens.length); // Debugging line
-
-
-
-
+    }).filter(token => {
+      // Check if parsedMetadata and attributes exist
+      if (!token.parsedMetadata || !token.parsedMetadata.attributes) {
+        console.log("Token excluded due to missing metadata/attributes:", token);
+        return false;
+      }
+      return true;
+    });
+  
+    console.log("Tokens after parsing and initial filtering:", filteredTokens.length); // Debugging line
+  
+    // Meal type filtering
     if (mealType !== 'all') {
-        filteredTokens = filteredTokens.filter(token => {
-            try {
-                const attributes = JSON.parse(token.metadata.attributes);
-                return attributes.some(attr => attr.trait_type === "Category" && attr.value === mealType);
-            } catch (error) {
-                console.error("Error parsing attributes:", error);
-                return false;
-            }
-        });
+      filteredTokens = filteredTokens.filter(token => {
+        const attributes = token.parsedMetadata.attributes;
+        return attributes.some(attr => attr.trait_type === "Category" && attr.value === mealType);
+      });
     }
-
+  
+    // Community filtering
     if (community !== 'All Communities') {
-        filteredTokens = filteredTokens.filter(token => {
-            try {
-                const attributes = JSON.parse(token.metadata.attributes);
-                return attributes.some(attr => attr.trait_type === "Community Tag" && attr.value === community);
-            } catch (error) {
-                console.error("Error parsing attributes:", error);
-                return false;
-            }
-        });
+      filteredTokens = filteredTokens.filter(token => {
+        const attributes = token.parsedMetadata.attributes;
+        return attributes.some(attr => attr.trait_type === "Community Tag" && attr.value === community);
+      });
     }
-
+  
+    // Search text filtering
     const searchTerms = [searchText1, searchText2, searchText3].filter(text => text.trim() !== '');
-
     if (searchTerms.length > 0) {
-        filteredTokens = filteredTokens.filter(token => {
-            try {
-                const attributes = JSON.parse(token.metadata.attributes);
-                return searchTerms.every(term =>
-                    attributes.some(attr => attr.value.toLowerCase().includes(term.toLowerCase()))
-                );
-            } catch (error) {
-                console.error("Error parsing attributes:", error);
-                return false;
-            }
-        });
+      filteredTokens = filteredTokens.filter(token => {
+        const attributes = token.parsedMetadata.attributes;
+        return searchTerms.every(term =>
+          attributes.some(attr => attr.value.toLowerCase().includes(term.toLowerCase()))
+        );
+      });
     }
-
+  
+    // Recipe name search filtering
     if (recipeNameSearch.trim() !== '') {
-        filteredTokens = filteredTokens.filter(token => {
-            try {
-                const metadata = token.metadata;
-                return metadata.name.toLowerCase().includes(recipeNameSearch.toLowerCase());
-            } catch (error) {
-                console.error("Error parsing metadata:", error);
-                return false;
-            }
-        });
+      filteredTokens = filteredTokens.filter(token => {
+        const name = token.parsedMetadata.name || '';
+        return name.toLowerCase().includes(recipeNameSearch.toLowerCase());
+      });
     }
-
+  
+    // Contributor search filtering
     if (contributorSearch.trim() !== '') {
-        filteredTokens = filteredTokens.filter(token => {
-            try {
-                const attributes = JSON.parse(token.metadata.attributes);
-                return attributes.some(attr => attr.trait_type === "Contributor" && attr.value.toLowerCase().includes(contributorSearch.toLowerCase()));
-            } catch (error) {
-                console.error("Error parsing attributes:", error);
-                return false;
-            }
-        });
+      filteredTokens = filteredTokens.filter(token => {
+        const attributes = token.parsedMetadata.attributes;
+        return attributes.some(attr => attr.trait_type === "Contributor" && attr.value.toLowerCase().includes(contributorSearch.toLowerCase()));
+      });
     }
-
+  
     console.log("Tokens after all filtering:", filteredTokens.length); // Debugging line
-
+  
+    // Sorting
     switch (sortOption) {
-        case 'likesDesc':
-            filteredTokens.sort((a, b) => b.likes - a.likes);
-            break;
-        case 'tipsDesc':
-            filteredTokens.sort((a, b) => {
-                const tipsA = Object.values(tipsData[a.tokenId] || {}).reduce((acc, val) => acc + parseFloat(val), 0);
-                const tipsB = Object.values(tipsData[b.tokenId] || {}).reduce((acc, val) => acc + parseFloat(val), 0);
-                return tipsB - tipsA;
-            });
-            break;
-        case 'newest':
-            filteredTokens.sort((a, b) => b.tokenId - a.tokenId);
-            break;
-        case 'oldest':
-            filteredTokens.sort((a, b) => a.tokenId - b.tokenId);
-            break;
-        case 'random':
-        default:
-            filteredTokens = shuffleArray(filteredTokens);
-            break;
-    }
-
+      case 'likesDesc':
+          filteredTokens.sort((a, b) => b.likes - a.likes);
+          break;
+      case 'tipsDesc':
+          filteredTokens.sort((a, b) => {
+              const tipsA = Object.values(tipsData[a.tokenId] || {}).reduce((acc, val) => acc + parseFloat(val), 0);
+              const tipsB = Object.values(tipsData[b.tokenId] || {}).reduce((acc, val) => acc + parseFloat(val), 0);
+              return tipsB - tipsA;
+          });
+          break;
+      case 'newest':
+          filteredTokens.sort((a, b) => b.tokenId - a.tokenId); // Newest to Oldest
+          break;
+      case 'oldest':
+          filteredTokens.sort((a, b) => a.tokenId - b.tokenId); // Oldest to Newest
+          break;
+      case 'random':
+      default:
+          filteredTokens = shuffleArray(filteredTokens);
+          break;
+  }
+    // Set the display tokens
     setDisplayTokens(filteredTokens);
     console.log("Display tokens set:", filteredTokens.length); // Debugging line
-};
+  };
+  
 
 
   const handleCulinaryStarsToggle = () => {
@@ -664,7 +660,7 @@ const Gallery = ({ account }) => {
                         account={account}
                         showBookmarks={showBookmarks}
                         onTipsFetch={handleTipsFetch}
-                        expanded={expandedTokenId === token.tokenId}
+                        expanded={expandedTokenId === token.token_id}
                         viewMode={viewMode}
                         imageMapping={imageMapping}
                     />

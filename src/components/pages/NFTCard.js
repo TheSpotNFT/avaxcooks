@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, forwardRef } from "react";
 import { ethers, Contract } from "ethers";
 import { AVAXCOOKSLIKESANDTIPS_ABI, AVAXCOOKSLIKESANDTIPS_ADDRESS } from "../Contracts/AvaxCooksLikeAndTip";
 import { InlineShareButtons } from 'sharethis-reactjs';
@@ -21,7 +21,7 @@ const sanitizeName = (name) => {
   return name.replace(/[()]/g, '').replace(/\s+/g, '_');
 };
 
-const NFTCard = ({ token, account, showBookmarks, galleryLikes, onTipsFetch, expanded, viewMode, imageMapping }) => {
+const NFTCard = forwardRef(({ token, account, showBookmarks, galleryLikes, onTipsFetch, expanded, viewMode, imageMapping }, ref) => {
   // Destructure using correct property names
   const { parsedMetadata, token_id } = token;
   const { name, image, attributes } = parsedMetadata || {};
@@ -280,12 +280,15 @@ const NFTCard = ({ token, account, showBookmarks, galleryLikes, onTipsFetch, exp
     }
     const recipeName = sanitizeName(name);
     const link = `${window.location.origin}/?recipeName=${recipeName}`;
-    navigator.clipboard.writeText(link).then(() => {
-      alert("Link copied to clipboard!");
-    }).catch(err => {
-      console.error("Failed to copy link: ", err);
-    });
+    navigator.clipboard.writeText(link)
+      .then(() => {
+        alert("Link copied to clipboard!");
+      })
+      .catch(err => {
+        console.error("Failed to copy link: ", err);
+      });
   };
+  
 
   useEffect(() => {
     if (name && image) {
@@ -299,13 +302,16 @@ const NFTCard = ({ token, account, showBookmarks, galleryLikes, onTipsFetch, exp
   const localImageUrl = imageMapping[token_id] || getImageUrl(image);
 
   return (
-    <div className={`text-white border pr-4 pl-4 pb-4 pt-2 m-2 shadow-md rounded-lg bg-neutral-900 border-neutral-900 transition-all duration-300 ease-in-out ${showDetails ? 'fixed inset-0 z-50 h-screen overflow-y-auto pt-36' : (viewMode === 'list' ? 'w-full lg:w-full' : 'w-full lg:w-1/3 2xl:w-1/6')} ${showBookmarks ? (hasBookmarked ? 'block' : 'hidden') : 'block'}`}>
+    <div 
+    ref={ref}
+    className={`text-white border pr-4 pl-4 pb-4 pt-2 m-2 shadow-md rounded-lg bg-neutral-900 border-neutral-900 transition-all duration-300 ease-in-out ${showDetails ? 'fixed inset-0 z-50 h-screen overflow-y-auto pt-36' : (viewMode === 'list' ? 'w-full lg:w-full' : 'w-full lg:w-1/3 2xl:w-1/6')} ${showBookmarks ? (hasBookmarked ? 'block' : 'hidden') : 'block'}`}>
       {viewMode === 'list' ? (
         <div className="flex items-center bg-neutral-700 p-4 rounded-lg">
           <div className="w-1/12 text-left">
             <img
               src={localImageUrl}
               alt={name || "NFT Image"}
+              loading="lazy"
               className="w-full h-auto max-h-24 object-contain"
               onError={(e) => { e.target.onerror = null; e.target.src = placeholderImage; }}
             />
@@ -328,6 +334,7 @@ const NFTCard = ({ token, account, showBookmarks, galleryLikes, onTipsFetch, exp
                   src={localImageUrl}
                   alt={name || "NFT Image"}
                   onClick={toggleDetails}
+                  loading="lazy"
                   onError={(e) => { e.target.onerror = null; e.target.src = placeholderImage; }}
                   className="mx-auto w-full object-cover rounded duration-300 border-zinc-900 border-8 max-w-[100vw] sm:max-w-[80vw] md:max-w-[50vw] lg:max-w-[33vw] group-hover:scale-105"
                 />
@@ -495,6 +502,6 @@ const NFTCard = ({ token, account, showBookmarks, galleryLikes, onTipsFetch, exp
       <div className="text-gray-600 text-xs">{token_id}</div>
     </div>
   );
-};
+});
 
 export default NFTCard;
