@@ -499,7 +499,7 @@ const NFTCard = forwardRef(({ token, account, showBookmarks, galleryLikes, onTip
           )}
         </>
       )}
-      <div className="text-gray-600 text-xs">{token_id}</div>
+      <div className="text-gray-600 text-xs sm:pt-64">{token_id}</div>
     </div>
   );
 });
