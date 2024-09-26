@@ -720,7 +720,7 @@ const Gallery = ({ account }) => {
         </div>
       </div>
       <div className="mx-auto">
-        <div className="flex flex-col md:flex-row items-center justify-center w-full space-y-2 md:space-y-0 md:mt-2 pb-4 md:pb-20 xl:px-48 lg:px-32 2xl:px-32">
+        <div className="flex flex-col md:flex-row items-center justify-center w-full space-y-2 md:space-y-0 md:mt-2 pb-8 md:pb-20 xl:px-48 lg:px-32 2xl:px-32">
           <div className="flex-1 w-full md:pr-4">
             <input
               type="text"
