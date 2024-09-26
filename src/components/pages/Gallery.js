@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import NFTCard from "./NFTCard";
+import UserProfileCard from "../../components/userProfileCard"; // Create this new component
 import { ethers, Contract } from "ethers";
 import { AVAXCOOKSLIKESANDTIPS_ABI, AVAXCOOKSLIKESANDTIPS_ADDRESS } from '../Contracts/AvaxCooksLikeAndTip';
+import userProfiles from '../../userProfiles'; // Import user profiles JSON
 import logo from "../../assets/iprs_spot.png";
 import logothin from "../../assets/iprs_thin.png";
 import { useLocation } from 'react-router-dom';
 import { signInAnonymously } from "../../firebase3";
+import Moralis from 'moralis';
 import image1 from "../../assets/nft_images/1.jpg";
 import image2 from "../../assets/nft_images/2.jpg";
 import image3 from "../../assets/nft_images/3.jpg";
@@ -169,6 +172,11 @@ import image161 from "../../assets/nft_images/161.jpg";
 import image162 from "../../assets/nft_images/162.jpg";
 import image163 from "../../assets/nft_images/163.jpg";
 import image164 from "../../assets/nft_images/164.jpg";
+import image165 from "../../assets/nft_images/165.jpg";
+import image166 from "../../assets/nft_images/166.jpg";
+import image167 from "../../assets/nft_images/167.jpg";
+import image168 from "../../assets/nft_images/168.jpg";
+import image169 from "../../assets/nft_images/169.jpg";
 
 const imageMapping = {
   1: image1,
@@ -334,12 +342,20 @@ const imageMapping = {
   162: image162,
   163: image163,
   164: image164,
+  165: image165,
+  166: image166,
+  167: image167,
+  168: image168,
+  169: image169,
 };
+
+const ITEMS_PER_PAGE = 100; // Number of items per page
 
 const Gallery = ({ account }) => {
   const [allTokens, setAllTokens] = useState([]);
   const [displayTokens, setDisplayTokens] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isCulinaryStarsMode, setIsCulinaryStarsMode] = useState(false); // New state for culinary stars mode
   const [pageToken, setPageToken] = useState(null);
   const [showBookmarks, setShowBookmarks] = useState(false);
   const [mealType, setMealType] = useState('all');
@@ -356,9 +372,12 @@ const Gallery = ({ account }) => {
   const [tipsData, setTipsData] = useState({});
   const [expandedTokenId, setExpandedTokenId] = useState(null);
   const [viewMode, setViewMode] = useState('card'); // New state for view mode
+  const apiKey = process.env.GLACIER_API_KEY;
+  const moralisApiKey = process.env.MORALIS_API;
+  const [moralisInitialized, setMoralisInitialized] = useState(false);
+
 
   useEffect(() => {
-    // Sign in anonymously on component mount
     signInAnonymously();
   }, []);
 
@@ -373,198 +392,288 @@ const Gallery = ({ account }) => {
 
   const location = useLocation();
 
-  const toggleSortTips = () => {
-    setSortTips(!sortTips);
-  };
-
   const handleTipsFetch = (tokenId, tips) => {
     setTipsData(prev => ({ ...prev, [tokenId]: tips }));
   };
 
-  const fetchAllItems = async () => {
-    if (loading) return;
-    setLoading(true);
-    let allFetchedTokens = [];
-    let currentPageToken = null;
-
-    try {
-      while (true) {
-        const pageTokenParam = currentPageToken ? `&pageToken=${currentPageToken}` : "";
-        const url = `https://glacier-api.avax.network/v1/chains/43114/nfts/collections/0x568863597b44AA509a45C15eE3Cab3150a562d32/tokens?pageSize=100${pageTokenParam}`;
-        const options = { method: "GET", headers: { accept: "application/json" } };
-
-        const response = await fetch(url, options);
-        const data = await response.json();
-        if (response.ok && Array.isArray(data.tokens)) {
-          allFetchedTokens = [...allFetchedTokens, ...data.tokens];
-          if (data.nextPageToken) {
-            currentPageToken = data.nextPageToken;
-          } else {
-            break;
-          }
-        } else {
-          throw new Error(data.message || "Error fetching data");
+    // Initialize Moralis once when the component mounts
+    useEffect(() => {
+      const initializeMoralis = async () => {
+        try {
+          await Moralis.start({
+            apiKey: moralisApiKey
+          });
+          setMoralisInitialized(true);
+          console.log("Moralis initialized");
+        } catch (error) {
+          console.error("Moralis initialization failed:", error);
         }
+      };
+  
+      initializeMoralis();
+    }, []);
+  
+    // Fetch items after Moralis has been initialized
+    useEffect(() => {
+      if (moralisInitialized) {
+        fetchAllItems();
       }
-      setAllTokens(allFetchedTokens);
-      filterAndSortTokens(allFetchedTokens);
-    } catch (err) {
-      console.error("Fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    }, [moralisInitialized]);
 
-  useEffect(() => {
-    fetchAllItems();
-  }, []);
-
-  const toggleSortLikes = () => {
-    setSortLikes(!sortLikes);
-  };
-
-  const fetchLikesAndCheckLiked = async (tokenId) => {
-    try {
-      const { ethereum } = window;
-      if (ethereum) {
-        const provider = new ethers.providers.Web3Provider(ethereum);
-        const signer = provider.getSigner();
-        const contract = new Contract(
-          AVAXCOOKSLIKESANDTIPS_ADDRESS,
-          AVAXCOOKSLIKESANDTIPS_ABI,
-          signer
-        );
-
-        const count = await contract.likes(tokenId);
-        setLikes(parseInt(count.toString(), 10));
+    const fetchAllItems = async () => {
+      if (loading) return;
+      setLoading(true);
+      let allFetchedTokens = [];
+      let cursor = null;
+    
+      try {
+        while (true) {
+          console.log("Fetching page with cursor:", cursor); // Debugging line
+    
+          const url = new URL(`https://deep-index.moralis.io/api/v2.2/nft/0x568863597b44AA509a45C15eE3Cab3150a562d32`);
+          const params = {
+            chain: "avalanche",
+            format: "decimal",
+            limit: 100,
+            cursor: cursor,
+          };
+          Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+    
+          const options = {
+            method: "GET",
+            headers: {
+              accept: "application/json",
+              "X-API-Key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjUzNzNiZmVlLTMxODctNGVlMi1hNTJjLWQzNmFmYzQ1OTAzMiIsIm9yZ0lkIjoiMjQ4NzU1IiwidXNlcklkIjoiMjUxOTk2IiwidHlwZUlkIjoiZDc0ZjE3OWQtNjYxMC00N2JmLWJjYzctYjJjZWIyNmZmY2VmIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3MjczMTM0NzEsImV4cCI6NDg4MzA3MzQ3MX0.eT8VsglTQqOnENcgO2TD_jfMH0GLFVrkvVUBLrdzmek", // Replace with your actual API key
+            },
+          };
+    
+          const response = await fetch(url, options);
+          const data = await response.json();
+    
+          if (response.ok && data && Array.isArray(data.result)) {
+            console.log(`Fetched ${data.result.length} tokens`); // Debugging line
+            allFetchedTokens = [...allFetchedTokens, ...data.result];
+    
+            if (data.cursor) {
+              cursor = data.cursor;
+            } else {
+              console.log("No more pages to fetch."); // Debugging line
+              break; // No more pages
+            }
+          } else {
+            throw new Error(data.message || "Error fetching data");
+          }
+        }
+    
+        console.log("Total tokens fetched:", allFetchedTokens.length); // Debugging line
+    
+        setAllTokens(allFetchedTokens);
+        // Call your filter and sort function if you have one
+        filterAndSortTokens(allFetchedTokens);
+    
+      } catch (err) {
+        console.error("Fetch error:", err);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching likes count or checking liked status:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchLikesAndCheckLiked();
-  }, [account]);
+    };
+    
+    useEffect(() => {
+      fetchAllItems();
+      
+    }, []);
+    
 
   useEffect(() => {
     filterAndSortTokens(allTokens);
-  }, [mealType, community, searchText1, searchText2, searchText3, recipeNameSearch, contributorSearch, sortOption, sortLikes, sortTips]);
+  }, [contributorSearch]); // Trigger filtering when contributorSearch changes
+  
 
   const filterAndSortTokens = (tokens) => {
-    let filteredTokens = tokens.filter(token => token.metadata && token.metadata.attributes);
+    console.log("Tokens before filtering:", tokens.length); // Debugging line
+     // Parse metadata and filter tokens
+  let filteredTokens = tokens.map(token => {
+    let parsedMetadata = {};
 
-    filteredTokens = filteredTokens.filter(token => token.tokenId !== 106);
+    if (token.metadata) {
+      if (typeof token.metadata === 'string') {
+        try {
+          parsedMetadata = JSON.parse(token.metadata);
+        } catch (error) {
+          console.error("Error parsing token.metadata:", error);
+          parsedMetadata = {};
+        }
+      } else {
+        parsedMetadata = token.metadata;
+      }
+    }
+
+    return {
+      ...token,
+      parsedMetadata,
+    };
+  }).filter(token => {
+    if (!token.parsedMetadata || !token.parsedMetadata.attributes) {
+      console.log("Token excluded due to missing metadata/attributes:", token);
+      return false;
+    }
+    return true;
+  });
+
+  console.log("Tokens after parsing and initial filtering:", filteredTokens.length); // Debugging line
+
+
+
 
     if (mealType !== 'all') {
-      filteredTokens = filteredTokens.filter(token => {
-        try {
-          const attributes = JSON.parse(token.metadata.attributes);
-          return attributes.some(attr => attr.trait_type === "Category" && attr.value === mealType);
-        } catch (error) {
-          console.error("Error parsing attributes:", error);
-          return false;
-        }
-      });
+        filteredTokens = filteredTokens.filter(token => {
+            try {
+                const attributes = JSON.parse(token.metadata.attributes);
+                return attributes.some(attr => attr.trait_type === "Category" && attr.value === mealType);
+            } catch (error) {
+                console.error("Error parsing attributes:", error);
+                return false;
+            }
+        });
     }
 
     if (community !== 'All Communities') {
-      filteredTokens = filteredTokens.filter(token => {
-        try {
-          const attributes = JSON.parse(token.metadata.attributes);
-          return attributes.some(attr => attr.trait_type === "Community Tag" && attr.value === community);
-        } catch (error) {
-          console.error("Error parsing attributes:", error);
-          return false;
-        }
-      });
+        filteredTokens = filteredTokens.filter(token => {
+            try {
+                const attributes = JSON.parse(token.metadata.attributes);
+                return attributes.some(attr => attr.trait_type === "Community Tag" && attr.value === community);
+            } catch (error) {
+                console.error("Error parsing attributes:", error);
+                return false;
+            }
+        });
     }
 
     const searchTerms = [searchText1, searchText2, searchText3].filter(text => text.trim() !== '');
 
     if (searchTerms.length > 0) {
-      filteredTokens = filteredTokens.filter(token => {
-        try {
-          const attributes = JSON.parse(token.metadata.attributes);
-          return searchTerms.every(term =>
-            attributes.some(attr => attr.value.toLowerCase().includes(term.toLowerCase()))
-          );
-        } catch (error) {
-          console.error("Error parsing attributes:", error);
-          return false;
-        }
-      });
+        filteredTokens = filteredTokens.filter(token => {
+            try {
+                const attributes = JSON.parse(token.metadata.attributes);
+                return searchTerms.every(term =>
+                    attributes.some(attr => attr.value.toLowerCase().includes(term.toLowerCase()))
+                );
+            } catch (error) {
+                console.error("Error parsing attributes:", error);
+                return false;
+            }
+        });
     }
 
     if (recipeNameSearch.trim() !== '') {
-      filteredTokens = filteredTokens.filter(token => {
-        try {
-          const metadata = token.metadata;
-          return metadata.name.toLowerCase().includes(recipeNameSearch.toLowerCase());
-        } catch (error) {
-          console.error("Error parsing metadata:", error);
-          return false;
-        }
-      });
+        filteredTokens = filteredTokens.filter(token => {
+            try {
+                const metadata = token.metadata;
+                return metadata.name.toLowerCase().includes(recipeNameSearch.toLowerCase());
+            } catch (error) {
+                console.error("Error parsing metadata:", error);
+                return false;
+            }
+        });
     }
 
     if (contributorSearch.trim() !== '') {
-      filteredTokens = filteredTokens.filter(token => {
-        try {
-          const attributes = JSON.parse(token.metadata.attributes);
-          return attributes.some(attr => attr.trait_type === "Contributor" && attr.value.toLowerCase().includes(contributorSearch.toLowerCase()));
-        } catch (error) {
-          console.error("Error parsing attributes:", error);
-          return false;
-        }
-      });
+        filteredTokens = filteredTokens.filter(token => {
+            try {
+                const attributes = JSON.parse(token.metadata.attributes);
+                return attributes.some(attr => attr.trait_type === "Contributor" && attr.value.toLowerCase().includes(contributorSearch.toLowerCase()));
+            } catch (error) {
+                console.error("Error parsing attributes:", error);
+                return false;
+            }
+        });
     }
 
+    console.log("Tokens after all filtering:", filteredTokens.length); // Debugging line
+
     switch (sortOption) {
-      case 'likesDesc':
-        filteredTokens.sort((a, b) => b.likes - a.likes);
-        break;
-      case 'tipsDesc':
-        filteredTokens.sort((a, b) => {
-          const tipsA = Object.values(tipsData[a.tokenId] || {}).reduce((acc, val) => acc + parseFloat(val), 0);
-          const tipsB = Object.values(tipsData[b.tokenId] || {}).reduce((acc, val) => acc + parseFloat(val), 0);
-          return tipsB - tipsA;
-        });
-        break;
-      case 'newest':
-        filteredTokens.sort((a, b) => a.tokenId - b.tokenId);
-        break;
-      case 'oldest':
-        filteredTokens.sort((a, b) => b.tokenId - a.tokenId);
-        break;
-      case 'random':
-      default:
-        filteredTokens = shuffleArray(filteredTokens);
-        break;
+        case 'likesDesc':
+            filteredTokens.sort((a, b) => b.likes - a.likes);
+            break;
+        case 'tipsDesc':
+            filteredTokens.sort((a, b) => {
+                const tipsA = Object.values(tipsData[a.tokenId] || {}).reduce((acc, val) => acc + parseFloat(val), 0);
+                const tipsB = Object.values(tipsData[b.tokenId] || {}).reduce((acc, val) => acc + parseFloat(val), 0);
+                return tipsB - tipsA;
+            });
+            break;
+        case 'newest':
+            filteredTokens.sort((a, b) => b.tokenId - a.tokenId);
+            break;
+        case 'oldest':
+            filteredTokens.sort((a, b) => a.tokenId - b.tokenId);
+            break;
+        case 'random':
+        default:
+            filteredTokens = shuffleArray(filteredTokens);
+            break;
     }
 
     setDisplayTokens(filteredTokens);
-  };
+    console.log("Display tokens set:", filteredTokens.length); // Debugging line
+};
 
-  const toggleBookmarks = () => {
-    setShowBookmarks(!showBookmarks);
-  };
 
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const recipeName = params.get("recipeName");
-    if (recipeName) {
-      const formattedName = recipeName.replace(/_/g, ' ');
-      const token = allTokens.find(token => token.metadata && token.metadata.name === formattedName);
-      if (token) {
-        setExpandedTokenId(token.tokenId);
-      }
+  const handleCulinaryStarsToggle = () => {
+    if (isCulinaryStarsMode || contributorSearch !== '') {
+        // If in culinary stars mode or a specific contributor is selected, reset to the original view
+        setIsCulinaryStarsMode(false);
+        setContributorSearch('');
+    } else {
+        // If not in culinary stars mode, switch to it
+        setIsCulinaryStarsMode(true);
     }
-  }, [location, allTokens]);
+};
 
-  const sanitizeName = (name) => {
-    return name.replace(/[()]/g, '').replace(/\s+/g, '_');
+
+  const handleUserProfileClick = (username) => {
+    setContributorSearch(username);
+    setIsCulinaryStarsMode(false); // Switch back to recipe cards view
   };
+  
+  
+  
+
+  const renderCards = () => {
+    console.log("Rendering tokens:", displayTokens.length); // Debugging line
+
+    if (isCulinaryStarsMode) {
+        return (
+            <div className="flex flex-wrap justify-center z-10 opacity-95 col-span-3">
+                {userProfiles.map((profile, index) => (
+                    <UserProfileCard
+                        key={index}
+                        profile={profile}
+                        onClick={() => handleUserProfileClick(profile.username)}
+                    />
+                ))}
+            </div>
+        );
+    } else {
+        return (
+            <div className="relative flex flex-wrap justify-center z-10 opacity-95 col-span-3">
+                {displayTokens.map((token, index) => (
+                    <NFTCard
+                        key={index}
+                        token={token}
+                        account={account}
+                        showBookmarks={showBookmarks}
+                        onTipsFetch={handleTipsFetch}
+                        expanded={expandedTokenId === token.tokenId}
+                        viewMode={viewMode}
+                        imageMapping={imageMapping}
+                    />
+                ))}
+            </div>
+        );
+    }
+};
+
 
   return (
     <div className="container mx-auto p-4 pt-0 md:pt-4">
@@ -572,6 +681,7 @@ const Gallery = ({ account }) => {
         <img src={logothin} alt="Logo" />
       </div>
       <h1 className="text-6xl pb-8 pt-12 font-bold mb-4 text-neutral-800">Browse {displayTokens.length} Recipes</h1>
+      <div className="py-0 md:pb-0 md:py-0 lg:px-32 xl:px-48 mx-auto 2xl:px-32">
       <div className="py-0 md:pb-0 md:py-0 lg:px-32 xl:px-48 mx-auto 2xl:px-32">
         {/* Search Inputs */}
         <div className="flex flex-col md:flex-row items-center justify-center w-full space-y-2 md:space-y-0 mt-2 pb-2">
@@ -679,72 +789,49 @@ const Gallery = ({ account }) => {
               <option value="tipsDesc">Most Tipped First</option>*/}
             </select>
           </div>
-        </div>
+        </div> 
+        
       </div>
-      {/*<div className="flex justify-end py-0">
-        <button
-          onClick={() => setViewMode(viewMode === 'card' ? 'list' : 'card')}
-          className="bg-neutral-700 text-gray-200 rounded-lg p-2"
-        >
-          {viewMode === 'card' ? (
-            <span className="flex items-center">
-              <svg className="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3 6h6v6H3V6zm8 0h10v6H11V6zM3 14h6v6H3v-6zm8 0h10v6H11v-6z" />
-              </svg>
-              List View
-            </span>
-          ) : (
-            <span className="flex items-center">
-              <svg className="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z" />
-              </svg>
-              Card View
-            </span>
-          )}
-        </button>
+        {/* (Search Input Elements) */}
       </div>
-*/}
       <div className="mt-4">
-        {viewMode === 'card' ? (
-          <div className="relative flex flex-wrap justify-center z-10 opacity-95 col-span-3">
-            {displayTokens.slice().reverse().map((token, index) => (
-              <NFTCard
-                key={index}
-                token={token}
-                account={account}
-                showBookmarks={showBookmarks}
-                onTipsFetch={handleTipsFetch}
-                expanded={expandedTokenId === token.tokenId} // Pass the expanded state
-                viewMode={viewMode}
-                imageMapping={imageMapping}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="relative z-10 opacity-95 w-2/3 mx-auto">
-            <div className="grid grid-cols-1 gap-4 text-gray-200">
-              <div className="bg-neutral-800 p-4 rounded-lg space-y-4">
-                <div className="flex px-4 py-2 items-center">
-                  <div className="w-1/12"></div>
-                  <div className="w-1/3 text-left font-bold">Recipe Name</div>
-                  <div className="w-1/3 text-left font-bold">Contributor</div>
-                </div>
-                {displayTokens.slice().reverse().map((token, index) => (
-                  <NFTCard
-                    key={index}
-                    token={token}
-                    account={account}
-                    showBookmarks={showBookmarks}
-                    onTipsFetch={handleTipsFetch}
-                    expanded={expandedTokenId === token.tokenId} // Pass the expanded state
-                    viewMode={viewMode}
-                    imageMapping={imageMapping}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+      {/*<div className="px-2 md:px-2 lg:px-32 xl:px-48 2xl:px-32 pb-12">
+      <button
+  onClick={handleCulinaryStarsToggle}
+  className="bg-neutral-700 text-white rounded-xl px-16 py-8 w-full text-4xl tracking-widest font-bold hover:bg-teal-500 duration-300"
+>
+  {isCulinaryStarsMode || contributorSearch ? (
+    "Back"
+  ) : (
+    <>
+   
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12 inline-block mr-2 pb-2">
+        <path d="M12 2.25l2.474 7.617h8.005l-6.482 4.712 2.474 7.617L12 17.484l-6.471 4.712 2.474-7.617L1.518 9.867h8.005L12 2.25z"/>
+      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12 inline-block mr-2 pb-2">
+        <path d="M12 2.25l2.474 7.617h8.005l-6.482 4.712 2.474 7.617L12 17.484l-6.471 4.712 2.474-7.617L1.518 9.867h8.005L12 2.25z"/>
+      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12 inline-block mr-2 pb-2">
+        <path d="M12 2.25l2.474 7.617h8.005l-6.482 4.712 2.474 7.617L12 17.484l-6.471 4.712 2.474-7.617L1.518 9.867h8.005L12 2.25z"/>
+      </svg>
+      Culinary Stars
+   
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12 inline-block mr-2 pb-2">
+        <path d="M12 2.25l2.474 7.617h8.005l-6.482 4.712 2.474 7.617L12 17.484l-6.471 4.712 2.474-7.617L1.518 9.867h8.005L12 2.25z"/>
+      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12 inline-block mr-2 pb-2">
+        <path d="M12 2.25l2.474 7.617h8.005l-6.482 4.712 2.474 7.617L12 17.484l-6.471 4.712 2.474-7.617L1.518 9.867h8.005L12 2.25z"/>
+      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12 inline-block mr-2 pb-2">
+        <path d="M12 2.25l2.474 7.617h8.005l-6.482 4.712 2.474 7.617L12 17.484l-6.471 4.712 2.474-7.617L1.518 9.867h8.005L12 2.25z"/>
+      </svg>
+    </>
+  )}
+</button>
+
+</div>*/}
+
+        {renderCards()}
       </div>
       {loading && <p>Loading...</p>}
       <div className="fixed bottom-5 left-10 w-96 h-96 pointer-events-none z-0 hidden md:block opacity-100">
@@ -755,4 +842,3 @@ const Gallery = ({ account }) => {
 };
 
 export default Gallery;
-
