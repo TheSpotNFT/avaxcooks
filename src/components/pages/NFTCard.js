@@ -468,7 +468,7 @@ const NFTCard = forwardRef(({ token, account, showBookmarks, galleryLikes, onTip
             </div>
           </div>
           {showDetails && (
-            <div className="grid grid-cols-2 gap-4 p-4">
+            <div className="grid grid-cols-2 gap-4 p-4 sm:pb-64">
               <div className="col-span-1">
                 {attributesArray.slice(0, -1).map((attr, index) => (
                   <div key={index} className="bg-zinc-800 text-avax-white rounded p-2 drop-shadow-md mb-2 text-sm md:text-base xl:text-lg">
@@ -499,7 +499,7 @@ const NFTCard = forwardRef(({ token, account, showBookmarks, galleryLikes, onTip
           )}
         </>
       )}
-      <div className="text-gray-600 text-xs sm:pt-64">{token_id}</div>
+      <div className="text-gray-600 text-xs">{token_id}</div>
     </div>
   );
 });
