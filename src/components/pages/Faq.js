@@ -41,6 +41,7 @@ const Docs = () => {
         </div>
         <div className="bg-neutral-800 text-gray-200 p-4 rounded-lg shadow-md">
           <h2 className="font-semibold mb-2 pb-4 text-xl">How to Add the Avalanche Network?</h2>
+          <p className="pb-4">Once you have installed the MetaMask browser, click the button below to add Avalanche</p>
           <button onClick={addAvalancheNetwork} className="mt-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors duration-300">Add Avalanche Network</button>
         </div>
         <div className="bg-neutral-800 text-gray-200 p-4 rounded-lg shadow-md">
