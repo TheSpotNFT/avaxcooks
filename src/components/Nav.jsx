@@ -18,6 +18,10 @@ export const Nav = ({
     { name: "Getting Started", link: "/faq" },
     { name: "Twitter", link: "https://twitter.com/__iprs" },
     { name: "Discord", link: "https://discord.gg/pJT7ndQ88F" },
+    { name: "AvaxCooks Contract", link: "https://snowscan.xyz/address/0x568863597b44AA509a45C15eE3Cab3150a562d32" },
+    { name: "LikesAndTips Contract", link: "https://snowscan.xyz/address/0xDb00A15bc77283B2f0F023572eaA7BfAd0b70798" },
+    { name: "Commenting Contract", link: "https://snowscan.xyz/address/0x568863597b44AA509a45C15eE3Cab3150a562d32" },
+
   ];
 
   const [open, setOpen] = useState(false);
@@ -33,7 +37,7 @@ export const Nav = ({
               <span className="text-xs flex md:text-3xl font-bold text-white z-30 pl-8 md:block sm:hidden">InterPlanetary Recipe System</span>
             </div>
             <ul
-              className={`pr-12 overflow-y-visible xl:flex xl:items-center absolute xl:static bg-neutral-700 left-0 sm:w-full md:w-1/3 xl:w-auto xl:pl-0 pl-0 transition-all duration-300 ease-in ${open ? "md:top-24 sm:top-[75px] opacity-100 shadow-md" : "top-[-250px] md:top-[-250px] z-10"
+              className={`pr-12 overflow-y-visible xl:flex xl:items-center absolute xl:static bg-neutral-700 left-0 sm:w-full md:w-1/3 xl:w-auto xl:pl-0 pl-0 transition-all duration-300 ease-in ${open ? "md:top-24 sm:top-[75px] opacity-100 shadow-md" : "top-[-400px] md:top-[-400px] z-10"
                 }`}
             >
               {Links.map((link) => (
