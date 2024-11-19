@@ -21,7 +21,7 @@ const sanitizeName = (name) => {
   return name.replace(/[()]/g, '').replace(/\s+/g, '_');
 };
 
-const NFTCard = forwardRef(({ token, account, showBookmarks, galleryLikes, onTipsFetch, expanded, viewMode, imageMapping }, ref) => {
+const NFTCard = forwardRef(({ token, account, showBookmarks, galleryLikes, onTipsFetch, expanded, viewMode, imageMapping, refreshBookmarks }, ref) => {
   // Destructure using correct property names
   const { parsedMetadata, token_id } = token;
   const { name, image, attributes } = parsedMetadata || {};
@@ -123,7 +123,7 @@ const NFTCard = forwardRef(({ token, account, showBookmarks, galleryLikes, onTip
     try {
       const { ethereum } = window;
       if (!ethereum) return;
-
+  
       const provider = new ethers.providers.Web3Provider(ethereum);
       const signer = provider.getSigner();
       const contract = new Contract(
@@ -131,14 +131,23 @@ const NFTCard = forwardRef(({ token, account, showBookmarks, galleryLikes, onTip
         AVAXCOOKSLIKESANDTIPS_ABI,
         signer
       );
-
+  
       const tx = await contract.bookmark(token_id);
       await tx.wait();
+  
+      // Fetch the updated bookmark status
       fetchBookmarkStatus();
+  
+      // Call refreshBookmarks to update the Gallery component
+      if (refreshBookmarks) {
+        refreshBookmarks();
+      }
+  
     } catch (error) {
       console.error("Error toggling bookmark state:", error);
     }
   };
+  
 
   const fetchBookmarkStatus = async () => {
     try {

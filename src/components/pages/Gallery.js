@@ -10,6 +10,10 @@ import logothin from "../../assets/iprs_thin.png";
 import { signInAnonymously } from "../../firebase3";
 import Moralis from 'moralis';
 import { sanitizeName } from "../../utils";
+import loadingBlue from "../../assets/onion_chop_blue.gif";
+import loadingOrange from "../../assets/onion_chop_orange.gif";
+import loadingRed from "../../assets/onion_chop_red.gif";
+import loadingClear from "../../assets/onion_chop_CLEAR.gif";
 
 import image1 from "../../assets/nft_images/1.jpg";
 import image2 from "../../assets/nft_images/2.jpg";
@@ -382,6 +386,7 @@ const Gallery = ({ account }) => {
   const recipeNameFromURL = queryParams.get('recipeName');
   const cardRefs = useRef({});
   const [isRecipeLoading, setIsRecipeLoading] = useState(false);
+  const [loadingResults, setLoadingResults] = useState(false);
 
   useEffect(() => {
     signInAnonymously();
@@ -497,10 +502,10 @@ const Gallery = ({ account }) => {
     }, []);
     
 
-    useEffect(() => {
+    /*useEffect(() => {
       filterAndSortTokens(allTokens);
     }, [allTokens, recipeNameSearch, searchText1, searchText2, searchText3, mealType, community, contributorSearch, sortOption]);
-    
+    */
   
 
   const filterAndSortTokens = (tokens) => {
@@ -632,6 +637,12 @@ const Gallery = ({ account }) => {
     setIsCulinaryStarsMode(false); // Switch back to recipe cards view
   };
   
+  const applyFilters = async () => {
+    setLoadingResults(true); // Show loading indicator
+    await filterAndSortTokens(allTokens); // Filter and sort tokens
+    setLoadingResults(false); // Hide loading indicator
+  };
+  
   
   
 
@@ -671,170 +682,159 @@ const Gallery = ({ account }) => {
 };
 
 
-  return (
-    <div className="container mx-auto p-4 pt-0 md:pt-4">
-      <div className="mx-auto w-64 h-64 pt-6 pointer-events-none block md:hidden pb-8">
-        <img src={logothin} alt="Logo" />
+return (
+  <>
+    {loading ? (
+      <div className="fixed inset-0 flex items-center justify-center z-50 bg-light-teal">
+        <img src={loadingClear} alt="Loading..." className="object-cover h-2/3 bg-light-teal" />
       </div>
-      <h1 className="text-4xl md:text-6xl pb-8 pt-12 font-bold mb-4 text-neutral-800">Browse {displayTokens.length} Recipes</h1>
-      <div className="py-0 md:pb-0 md:py-0 lg:px-32 xl:px-48 mx-auto 2xl:px-32">
-      <div className="py-0 md:pb-0 md:py-0 lg:px-32 xl:px-48 mx-auto 2xl:px-32">
-        {/* Search Inputs */}
-        <div className="flex flex-col md:flex-row items-center justify-center w-full space-y-2 md:space-y-0 mt-2 pb-2">
-          <div className="flex-1 w-full md:pr-2">
-            <input
-              type="text"
-              value={recipeNameSearch}
-              onChange={(e) => setRecipeNameSearch(e.target.value)}
-              placeholder="Search recipe name..."
-              className="text-gray-200 bg-neutral-700 shadow-md text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-            />
+    ) : (
+      <div className="container mx-auto p-4 pt-0 md:pt-4">
+        <div className="mx-auto w-64 h-64 pt-6 pointer-events-none block md:hidden pb-8">
+          <img src={logothin} alt="Logo" />
+        </div>
+        <h1 className="text-4xl md:text-6xl pb-8 pt-12 font-bold mb-4 text-neutral-800">
+          Browse {displayTokens.length} Recipes
+        </h1>
+        <div className="py-0 md:pb-0 md:py-0 lg:px-32 xl:px-48 mx-auto 2xl:px-32">
+          <div className="py-0 md:pb-0 md:py-0 lg:px-32 xl:px-48 mx-auto 2xl:px-32">
+            {/* Search Inputs */}
+            <div className="flex flex-col md:flex-row items-center justify-center w-full space-y-2 md:space-y-0 mt-2 pb-2">
+  <div className="flex-1 w-full md:pr-2">
+    <input
+      type="text"
+      value={recipeNameSearch}
+      onChange={(e) => setRecipeNameSearch(e.target.value)}
+      placeholder="Search recipe name..."
+      className="text-gray-200 bg-neutral-700 shadow-md text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+    />
+  </div>
+  <div className="flex-1 w-full md:pr-2 md:pl-2">
+    <input
+      type="text"
+      value={searchText1}
+      onChange={(e) => setSearchText1(e.target.value)}
+      placeholder="Search ingredient 1..."
+      className="text-gray-200 bg-neutral-700 shadow-md text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+    />
+  </div>
+  <div className="flex-1 w-full md:px-2">
+    <input
+      type="text"
+      value={searchText2}
+      onChange={(e) => setSearchText2(e.target.value)}
+      placeholder="Search ingredient 2..."
+      className="text-gray-200 bg-neutral-700 shadow-md text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+    />
+  </div>
+  <div className="flex-1 w-full md:pl-2">
+    <input
+      type="text"
+      value={searchText3}
+      onChange={(e) => setSearchText3(e.target.value)}
+      placeholder="Search ingredient 3..."
+      className="text-gray-200 bg-neutral-700 shadow-md text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+    />
+  </div>
+ 
+</div>
+
+
           </div>
-          <div className="flex-1 w-full md:pr-2 md:pl-2">
-            <input
-              type="text"
-              value={searchText1}
-              onChange={(e) => setSearchText1(e.target.value)}
-              placeholder="Search ingredient 1..."
-              className="text-gray-200 bg-neutral-700 shadow-md text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-            />
-          </div>
-          <div className="flex-1 w-full md:px-2">
-            <input
-              type="text"
-              value={searchText2}
-              onChange={(e) => setSearchText2(e.target.value)}
-              placeholder="Search ingredient 2..."
-              className="text-gray-200 bg-neutral-700 shadow-md text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-            />
-          </div>
-          <div className="flex-1 w-full md:pl-2">
-            <input
-              type="text"
-              value={searchText3}
-              onChange={(e) => setSearchText3(e.target.value)}
-              placeholder="Search ingredient 3..."
-              className="text-gray-200 bg-neutral-700 shadow-md text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-            />
+          <div className="mx-auto">
+            <div className="flex flex-col md:flex-row items-center justify-center w-full space-y-2 md:space-y-0 md:mt-2 pb-8 xl:px-48 lg:px-32 2xl:px-32">
+              <div className="flex-1 w-full md:pr-4">
+                <input
+                  type="text"
+                  value={contributorSearch}
+                  onChange={(e) => setContributorSearch(e.target.value)}
+                  placeholder="Search by contributor..."
+                  className="text-gray-200 bg-neutral-700 shadow-md text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                />
+              </div>
+              <div className="flex-1 w-full md:pr-2">
+                <select
+                  className="bg-neutral-700 border-neutral-800 text-gray-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                  value={mealType}
+                  onChange={(e) => setMealType(e.target.value)}
+                >
+                  <option value="all">All Categories</option>
+                  <option value="Breakfast">Breakfast</option>
+                  <option value="Dressings">Dressings</option>
+                  <option value="Lunch">Lunch</option>
+                  <option value="Sauces">Sauces</option>
+                  <option value="Snacks">Snacks</option>
+                  <option value="Dinner">Dinner</option>
+                  <option value="Appetizer">Appetizer</option>
+                  <option value="Marinades">Marinades</option>
+                  <option value="Garnishes">Garnishes</option>
+                  <option value="Desserts">Desserts</option>
+                  <option value="Baked Goods">Baked Goods</option>
+                  <option value="Drinks">Drinks</option>
+                  <option value="Cleaners">Cleaners</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div className="flex-1 w-full md:px-2">
+                <select
+                  className="bg-neutral-700 border-neutral-800 text-gray-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                  value={community}
+                  onChange={(e) => setCommunity(e.target.value)}
+                >
+                  <option value="All Communities">All Communities</option>
+                  <option value="Avax Apes">Avax Apes</option>
+                  <option value="Cuddlefish">Cuddlefish</option>
+                  <option value="Kingshit">Kingshit</option>
+                  <option value="Steady">Steady</option>
+                  <option value="The Spot">The Spot</option>
+                  <option value="The Arena">The Arena</option>
+                  <option value="No Chill">No Chill</option>
+                  <option value="Cozyverse">Cozyverse</option>
+                  <option value="Quirkies">Quirkies</option>
+                  <option value="Creature World">Creature World</option>
+                </select>
+              </div>
+              <div className="flex-1 w-full md:pl-2">
+                <select
+                  className="bg-neutral-700 border-neutral-800 text-gray-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                  value={sortOption}
+                  onChange={(e) => setSortOption(e.target.value)}
+                >
+                  <option value="random">Random Order</option>
+                  <option value="newest">Newest to Oldest</option>
+                  <option value="oldest">Oldest to Newest</option>
+                </select>
+              </div>
+  
+            </div>
+            <div className="flex justify-center mx-auto pb-8 px-0 md:px-32">
+    <button
+      onClick={applyFilters}
+      className="text-gray-200 bg-neutral-700 shadow-md text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+    >
+      Apply Filters
+    </button>
+  </div>
           </div>
         </div>
-      </div>
-      <div className="mx-auto">
-        <div className="flex flex-col md:flex-row items-center justify-center w-full space-y-2 md:space-y-0 md:mt-2 pb-8 md:pb-20 xl:px-48 lg:px-32 2xl:px-32">
-          <div className="flex-1 w-full md:pr-4">
-            <input
-              type="text"
-              value={contributorSearch}
-              onChange={(e) => setContributorSearch(e.target.value)}
-              placeholder="Search by contributor..."
-              className="text-gray-200 bg-neutral-700 shadow-md text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-            />
-          </div>
-          <div className="flex-1 w-full md:pr-2">
-            <select
-              className="bg-neutral-700 border-neutral-800 text-gray-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-              value={mealType}
-              onChange={(e) => setMealType(e.target.value)}
-            >
-              <option value="all">All Categories</option>
-              <option value="Breakfast">Breakfast</option>
-              <option value="Dressings">Dressings</option>
-              <option value="Lunch">Lunch</option>
-              <option value="Sauces">Sauces</option>
-              <option value="Snacks">Snacks</option>
-              <option value="Dinner">Dinner</option>
-              <option value="Appetizer">Appetizer</option>
-              <option value="Marinades">Marinades</option>
-              <option value="Garnishes">Garnishes</option>
-              <option value="Desserts">Desserts</option>
-              <option value="Baked Goods">Baked Goods</option>
-              <option value="Drinks">Drinks</option>
-              <option value="Cleaners">Cleaners</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div className="flex-1 w-full md:px-2">
-            <select
-              className="bg-neutral-700 border-neutral-800 text-gray-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-              value={community}
-              onChange={(e) => setCommunity(e.target.value)}
-            >
-              <option value="All Communities">All Communities</option>
-              <option value="Avax Apes">Avax Apes</option>
-              <option value="Cuddlefish">Cuddlefish</option>
-              <option value="Kingshit">Kingshit</option>
-              <option value="Steady">Steady</option>
-              <option value="The Spot">The Spot</option>
-              <option value="The Arena">The Arena</option>
-              <option value="No Chill">No Chill</option>
-              <option value="Cozyverse">Cozyverse</option>
-              <option value="Quirkies">Quirkies</option>
-              <option value="Creature World">Creature World</option>
-            </select>
-          </div>
-          <div className="flex-1 w-full md:pl-2">
-            <select
-              className="bg-neutral-700 border-neutral-800 text-gray-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-              value={sortOption}
-              onChange={(e) => setSortOption(e.target.value)}
-            >
-              <option value="random">Random Order</option>
-              <option value="newest">Newest to Oldest</option>
-              <option value="oldest">Oldest to Newest</option>
-              {/*<option value="likesDesc">Most Likes First</option>
-              <option value="tipsDesc">Most Tipped First</option>*/}
-            </select>
-          </div>
-        </div> 
-        
-      </div>
-        {/* (Search Input Elements) */}
-      </div>
-      <div className="mt-4">
-      {/*<div className="px-2 md:px-2 lg:px-32 xl:px-48 2xl:px-32 pb-12">
-      <button
-  onClick={handleCulinaryStarsToggle}
-  className="bg-neutral-700 text-white rounded-xl px-16 py-8 w-full text-4xl tracking-widest font-bold hover:bg-teal-500 duration-300"
->
-  {isCulinaryStarsMode || contributorSearch ? (
-    "Back"
-  ) : (
-    <>
-   
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12 inline-block mr-2 pb-2">
-        <path d="M12 2.25l2.474 7.617h8.005l-6.482 4.712 2.474 7.617L12 17.484l-6.471 4.712 2.474-7.617L1.518 9.867h8.005L12 2.25z"/>
-      </svg>
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12 inline-block mr-2 pb-2">
-        <path d="M12 2.25l2.474 7.617h8.005l-6.482 4.712 2.474 7.617L12 17.484l-6.471 4.712 2.474-7.617L1.518 9.867h8.005L12 2.25z"/>
-      </svg>
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12 inline-block mr-2 pb-2">
-        <path d="M12 2.25l2.474 7.617h8.005l-6.482 4.712 2.474 7.617L12 17.484l-6.471 4.712 2.474-7.617L1.518 9.867h8.005L12 2.25z"/>
-      </svg>
-      Culinary Stars
-   
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12 inline-block mr-2 pb-2">
-        <path d="M12 2.25l2.474 7.617h8.005l-6.482 4.712 2.474 7.617L12 17.484l-6.471 4.712 2.474-7.617L1.518 9.867h8.005L12 2.25z"/>
-      </svg>
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12 inline-block mr-2 pb-2">
-        <path d="M12 2.25l2.474 7.617h8.005l-6.482 4.712 2.474 7.617L12 17.484l-6.471 4.712 2.474-7.617L1.518 9.867h8.005L12 2.25z"/>
-      </svg>
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12 inline-block mr-2 pb-2">
-        <path d="M12 2.25l2.474 7.617h8.005l-6.482 4.712 2.474 7.617L12 17.484l-6.471 4.712 2.474-7.617L1.518 9.867h8.005L12 2.25z"/>
-      </svg>
-    </>
-  )}
-</button>
-
-</div>*/}
-
-        {renderCards()}
-      </div>
-      {loading && <p>Loading...</p>}
-      <div className="fixed bottom-5 left-10 w-96 h-96 pointer-events-none z-0 hidden md:block opacity-100">
-        <img src={logo} alt="Logo" />
-      </div>
+        <div className="mt-4">
+  {loadingResults ? (
+    <div className="flex items-center justify-center">
+      <img src={logo} alt="Loading..." className="w-32 h-32" />
     </div>
-  );
+  ) : (
+    renderCards()
+  )}
+</div>
+
+        <div className="fixed bottom-5 left-10 w-96 h-96 pointer-events-none z-0 hidden md:block opacity-100">
+          <img src={logo} alt="Logo" />
+        </div>
+      </div>
+    )}
+  </>
+);
+
 };
 
 export default Gallery;

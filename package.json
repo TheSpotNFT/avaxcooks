@@ -33,6 +33,7 @@
     "react-select": "^5.4.0",
     "react-spring": "^9.6.1",
     "react-transition-group": "^4.4.5",
+    "react-window": "^1.8.10",
     "sharethis-reactjs": "^1.6.0",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",

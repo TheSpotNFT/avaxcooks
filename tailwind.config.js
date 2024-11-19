@@ -33,7 +33,8 @@ module.exports = {
       'bold-red':'#FF0000',
       'bold-orange':'#FFA500',
       'dark-teal':'#1e5479',
-      'light-teal': '#4cb1ac'
+      'light-teal': '#4cb1ac',
+      'blue': "#4cb1ac"
     
     },
       backgroundImage: {
